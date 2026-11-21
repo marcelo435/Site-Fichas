@@ -11,6 +11,14 @@ import { rolarComModelo, rolarEMostrar } from '../lib/rolagem';
 import { toast } from '../lib/toasts';
 import { nomeArquivo, num, porcentagem, uid } from '../lib/util';
 import { useTitulo } from '../lib/useTitulo';
+import armaduraFundo from '../assets/status/armadura-fundo.png';
+import armaduraLinhas from '../assets/status/armadura-linhas.png';
+import classeFundo from '../assets/status/classe-fundo.png';
+import classeLinhas from '../assets/status/classe-linhas.png';
+import deslocamentoFundo from '../assets/status/deslocamento-fundo.png';
+import deslocamentoLinhas from '../assets/status/deslocamento-linhas.png';
+import abismoFundo from '../assets/status/abismo-fundo.png';
+import abismoLinhas from '../assets/status/abismo-linhas.png';
 
 type Aba = 'pacto' | 'combate' | 'habilidades' | 'rituais' | 'inventario' | 'anotacoes';
 type Alterar = (fn: (f: TFicha) => void) => void;
@@ -209,11 +217,25 @@ function Pentagono({ f, sistema, alterar }: { f: TFicha; sistema: Sistema; alter
   );
 }
 
-function Status({ rotulo, children }: { rotulo: string; children: ReactNode }) {
+/** Ícones dos status: silhueta preta + detalhes claros, com o número em branco por cima. */
+const ICONES_STATUS = {
+  armadura: { fundo: armaduraFundo, linhas: armaduraLinhas, y: '8%' },
+  classe: { fundo: classeFundo, linhas: classeLinhas, y: '-4%' },
+  deslocamento: { fundo: deslocamentoFundo, linhas: deslocamentoLinhas, y: '4%' },
+  abismo: { fundo: abismoFundo, linhas: abismoLinhas, y: '0%' },
+};
+const mascara = (url: string): CSSProperties => ({ maskImage: `url(${url})`, WebkitMaskImage: `url(${url})` });
+
+function Status({ rotulo, icone, children }: { rotulo: string; icone: keyof typeof ICONES_STATUS; children: ReactNode }) {
+  const ic = ICONES_STATUS[icone];
   return (
-    <label className="status-item">
-      <span>{rotulo}</span>
-      {children}
+    <label className={`status-item status-${icone}`}>
+      <span className="status-icone" style={{ '--dy': ic.y } as CSSProperties}>
+        <i className="si-fundo" style={mascara(ic.fundo)} />
+        <i className="si-linhas" style={mascara(ic.linhas)} />
+        <span className="si-valor">{children}</span>
+      </span>
+      <span className="status-rotulo">{rotulo}</span>
     </label>
   );
 }
@@ -717,17 +739,18 @@ export function Ficha() {
             {campo('familia', 'Família')}
           </div>
           <div className="heroi-status">
-            <Status rotulo="Armadura">
+            <Status rotulo="Armadura" icone="armadura">
               <NumInput value={f.armadura} onChange={v => alterar(x => { x.armadura = v; })} />
             </Status>
-            <Status rotulo="Classe de armadura">
+            <Status rotulo="Classe de armadura" icone="classe">
               <NumInput value={f.defesa} onChange={v => alterar(x => { x.defesa = v; })} />
             </Status>
-            <Status rotulo="Deslocamento">
-              <input value={f.deslocamento} onChange={e => alterar(x => { x.deslocamento = e.target.value; })} />
+            <Status rotulo="Deslocamento" icone="deslocamento">
+              <input value={f.deslocamento} placeholder="–" onChange={e => alterar(x => { x.deslocamento = e.target.value; })} />
             </Status>
-            <Status rotulo="Status Abismo">
+            <Status rotulo="Porcentagem abissal" icone="abismo">
               <NumInput value={f.statusAbismo} onChange={v => alterar(x => { x.statusAbismo = v; })} />
+              <small>%</small>
             </Status>
           </div>
         </div>

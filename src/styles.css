@@ -238,15 +238,41 @@ input[type=number]::-webkit-inner-spin-button { opacity: .3; }
 }
 .heroi-status { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .6rem; }
 .status-item {
-  display: flex; flex-direction: column; gap: .1rem; padding: .5rem .85rem;
+  display: flex; align-items: center; gap: .85rem; padding: .45rem .85rem; cursor: text;
   background: rgba(255, 255, 255, .035); border: 1px solid var(--borda); border-radius: 10px;
 }
-.status-item span { font-size: .6rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--texto-2); }
-.status-item input {
-  background: transparent; border: none; padding: 0; text-align: left !important;
-  font-family: var(--serif); font-size: 1.45rem; font-weight: 700;
+.status-rotulo { font-size: .62rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--texto-2); line-height: 1.4; }
+/* ícone preto com contorno claro e o número branco dentro */
+.status-icone {
+  position: relative; flex: none; width: 78px; height: 78px; display: grid; place-items: center;
+  filter: drop-shadow(0 0 1px rgba(255, 255, 255, .9)) drop-shadow(0 0 7px rgba(255, 255, 255, .16));
+  transition: filter .2s, transform .2s;
 }
-.status-item input:focus { box-shadow: none; }
+.status-item:hover .status-icone, .status-item:focus-within .status-icone {
+  filter: drop-shadow(0 0 1px #fff) drop-shadow(0 0 10px rgba(255, 255, 255, .3)); transform: scale(1.04);
+}
+.status-icone > i {
+  position: absolute; inset: 0;
+  mask-size: contain; mask-repeat: no-repeat; mask-position: center;
+  -webkit-mask-size: contain; -webkit-mask-repeat: no-repeat; -webkit-mask-position: center;
+}
+.si-fundo { background: #000; }
+.si-linhas { background: rgba(255, 255, 255, .72); }
+.status-abismo .si-linhas { background: rgba(255, 255, 255, .5); }
+.status-armadura .si-linhas { background: rgba(255, 255, 255, .45); }
+.si-valor {
+  position: relative; z-index: 1; display: flex; align-items: baseline; justify-content: center;
+  width: 100%; transform: translateY(var(--dy, 0));
+}
+.si-valor input {
+  width: 100%; min-width: 0; background: transparent; border: none; padding: 0; text-align: center !important; color: #fff;
+  font-family: var(--serif); font-size: 1.45rem; font-weight: 700; line-height: 1.1; font-variant-numeric: lining-nums;
+  text-shadow: 0 0 3px #000, 0 0 6px #000, 0 0 10px #000;
+}
+.si-valor small { margin-left: -.15rem; font-size: .7rem; font-weight: 700; color: #fff; text-shadow: 0 0 4px #000; }
+.status-abismo .si-valor input { width: 2.4ch; }
+.status-deslocamento .si-valor input { font-size: 1.2rem; }
+.si-valor input:focus { box-shadow: none; }
 .status-item:focus-within { border-color: rgba(255, 255, 255, .4); }
 
 /* recursos */
