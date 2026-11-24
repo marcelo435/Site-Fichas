@@ -25,6 +25,11 @@ export const nomeArquivo = (s: string) =>
     .toLowerCase()
     .replace(/^-|-$/g, '') || 'arquivo';
 
+const semAcento = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+
+/** Recursos que só fazem sentido para personagem (monstro não tem Sede nem Fome). */
+export const recursoSoDePersonagem = (nome: string) => /sede|fome|agua|comida/.test(semAcento(nome));
+
 export const CORES = ['#c2413b', '#8a8a8a', '#c9a227', '#7c4dff', '#2bb3a3', '#d46a2b', '#3b6fd4', '#c24d9b'];
 
 export function corElemento(elemento: string, elementos: string[]) {

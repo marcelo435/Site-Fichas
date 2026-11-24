@@ -9,7 +9,7 @@ import { SimboloAtributo, SimboloCentro } from '../components/Simbolos';
 import { baixarJSON, redimensionarImagem } from '../lib/arquivos';
 import { rolarComModelo, rolarEMostrar } from '../lib/rolagem';
 import { toast } from '../lib/toasts';
-import { nomeArquivo, num, porcentagem, uid } from '../lib/util';
+import { nomeArquivo, num, porcentagem, recursoSoDePersonagem, uid } from '../lib/util';
 import { useTitulo } from '../lib/useTitulo';
 import armaduraFundo from '../assets/status/armadura-fundo.png';
 import armaduraLinhas from '../assets/status/armadura-linhas.png';
@@ -664,24 +664,29 @@ function AbaRituais({ f, alterar }: { f: TFicha; alterar: Alterar }) {
 /* Página                                                              */
 /* ------------------------------------------------------------------ */
 
-export function Ficha() {
-  const { personagemId = '' } = useParams();
+/**
+ * A ficha. Com `monstro`, é a mesma ficha para os monstros do mestre: sem Jogador, Idade, Família,
+ * Sede, Fome nem Pacto; "Pacto / Origem" vira Tipo, Altura vira Tamanho e Nível vira Ameaça.
+ */
+export function Ficha({ monstro = false }: { monstro?: boolean }) {
+  const { personagemId = '', monstroId = '' } = useParams();
   const [params] = useSearchParams();
   const navigate = useNavigate();
-  const f = useDados(s => s.personagens.find(x => x.id === personagemId));
+  const f = useDados(s => monstro ? s.monstros.find(x => x.id === monstroId) : s.personagens.find(x => x.id === personagemId));
   const mesas = useDados(s => s.mesas);
   const sistema = useDados(s => s.sistema);
   const todosRituais = useDados(s => s.rituais);
-  const [aba, setAba] = useState<Aba>('pacto');
+  const [aba, setAba] = useState<Aba>(monstro ? 'habilidades' : 'pacto');
   const inputRetrato = useRef<HTMLInputElement>(null);
   useTitulo(f?.nome ?? 'Ficha');
 
-  if (!f) return <NaoEncontrado msg="Personagem não encontrado." />;
+  if (!f) return <NaoEncontrado msg={monstro ? 'Monstro não encontrado.' : 'Personagem não encontrado.'} />;
 
-  // Se veio de uma mesa, a navegação mostra a mesa; senão, a lista de personagens.
-  const mesaOrigem = mesas.find(m => m.id === params.get('mesa'));
-  const emMesas = mesas.filter(m => m.personagens.includes(f.id));
-  const alterar: Alterar = fn => acoes().atualizarPersonagem(f.id, fn);
+  // Se veio de uma mesa, a navegação mostra a mesa; senão, a lista de personagens (ou de monstros).
+  const mesaOrigem = monstro ? undefined : mesas.find(m => m.id === params.get('mesa'));
+  const emMesas = monstro ? [] : mesas.filter(m => m.personagens.includes(f.id));
+  const alterar: Alterar = fn => monstro ? acoes().atualizarMonstro(f.id, fn) : acoes().atualizarPersonagem(f.id, fn);
+  const recursos = monstro ? sistema.recursos.filter(r => !recursoSoDePersonagem(r.nome)) : sistema.recursos;
   const qtdRituais = f.rituais.filter(id => todosRituais.some(r => r.id === id)).length;
 
   const trocarRetrato = async (arq?: File) => {
@@ -696,10 +701,17 @@ export function Ficha() {
 
   const exportar = () => {
     const rituais = todosRituais.filter(r => f.rituais.includes(r.id));
-    baixarJSON(`ficha-${nomeArquivo(f.nome)}.json`, { tipo: 'ficha', versao: 2, ficha: f, rituais });
+    const tipo = monstro ? 'monstro' : 'ficha';
+    baixarJSON(`${tipo}-${nomeArquivo(f.nome)}.json`, { tipo, versao: 2, ficha: f, rituais });
   };
 
   const excluir = () => {
+    if (monstro) {
+      if (!confirm(`Excluir o monstro "${f.nome}" de vez?`)) return;
+      navigate('/monstros');
+      acoes().excluirMonstro(f.id);
+      return;
+    }
     const aviso = emMesas.length ? `\nEle será removido de: ${emMesas.map(m => m.nome).join(', ')}.` : '';
     if (!confirm(`Excluir o personagem "${f.nome}" de vez?${aviso}`)) return;
     navigate(mesaOrigem ? `/mesa/${mesaOrigem.id}` : '/personagens');
@@ -714,7 +726,13 @@ export function Ficha() {
     </label>
   );
 
-  const abas: [Aba, string, number?][] = [
+  const abas: [Aba, string, number?][] = monstro ? [
+    ['habilidades', 'Habilidades', f.habilidadesNivel.length],
+    ['combate', 'Combate', f.ataques.length],
+    ['rituais', 'Rituais', qtdRituais],
+    ['inventario', 'Inventário', f.inventario.length],
+    ['anotacoes', 'Anotações'],
+  ] : [
     ['pacto', 'Pacto', f.pactos.length],
     ['combate', 'Combate', f.ataques.length],
     ['habilidades', 'Habilidades de nível', f.habilidadesNivel.length],
@@ -727,7 +745,9 @@ export function Ficha() {
     <div className="ficha">
       <div className="ficha-barra">
         <div className="migalhas">
-          {mesaOrigem ? (
+          {monstro ? (
+            <Link to="/monstros">Monstros</Link>
+          ) : mesaOrigem ? (
             <><Link to="/mesas">Mesas</Link> › <Link to={`/mesa/${mesaOrigem.id}`}>{mesaOrigem.nome}</Link></>
           ) : (
             <Link to="/personagens">Personagens</Link>
@@ -742,8 +762,8 @@ export function Ficha() {
         <div className="acoes">
           <button className="btn mini" onClick={exportar}>Exportar</button>
           <button className="btn mini" onClick={() => {
-            const id = acoes().duplicarPersonagem(f.id);
-            if (id) navigate(`/personagem/${id}`);
+            const id = monstro ? acoes().duplicarMonstro(f.id) : acoes().duplicarPersonagem(f.id);
+            if (id) navigate(monstro ? `/monstro/${id}` : `/personagem/${id}`);
           }}>Duplicar</button>
           <button className="btn mini perigo" onClick={excluir}>Excluir</button>
         </div>
@@ -762,21 +782,29 @@ export function Ficha() {
         </div>
         <div className="heroi-info">
           <div className="heroi-titulo">
-            <input className="heroi-nome" value={f.nome} placeholder="Nome do personagem" aria-label="Nome"
+            <input className="heroi-nome" value={f.nome} placeholder={monstro ? 'Nome do monstro' : 'Nome do personagem'} aria-label="Nome"
               onChange={e => alterar(x => { x.nome = e.target.value; })} />
-            <label className="heroi-nivel" title="Nível">
-              <span>Nv</span>
-              <NumInput value={f.nivel} aria-label="Nível" onChange={v => alterar(x => { x.nivel = v; })} />
+            <label className={`heroi-nivel ${monstro ? 'ameaca' : ''}`} title={monstro ? 'Ameaça' : 'Nível'}>
+              <span>{monstro ? 'Ameaça' : 'Nv'}</span>
+              <NumInput value={f.nivel} aria-label={monstro ? 'Ameaça' : 'Nível'} onChange={v => alterar(x => { x.nivel = v; })} />
             </label>
           </div>
-          <div className="heroi-campos">
-            {campo('jogador', 'Jogador')}
-            {campo('conceito', 'Pacto / Origem')}
-            {campo('estiloCombate', 'Estilo de combate')}
-            {campo('idade', 'Idade')}
-            {campo('altura', 'Altura')}
-            {campo('familia', 'Família')}
-          </div>
+          {monstro ? (
+            <div className="heroi-campos">
+              {campo('conceito', 'Tipo', 'ex.: Besta, Abissal, Morto-vivo')}
+              {campo('altura', 'Tamanho', 'ex.: Médio, Grande')}
+              {campo('estiloCombate', 'Estilo de combate')}
+            </div>
+          ) : (
+            <div className="heroi-campos">
+              {campo('jogador', 'Jogador')}
+              {campo('conceito', 'Pacto / Origem')}
+              {campo('estiloCombate', 'Estilo de combate')}
+              {campo('idade', 'Idade')}
+              {campo('altura', 'Altura')}
+              {campo('familia', 'Família')}
+            </div>
+          )}
           <div className="heroi-status">
             <Status rotulo="Armadura" icone="armadura">
               <NumInput value={f.armadura} onChange={v => alterar(x => { x.armadura = v; })} />
@@ -800,7 +828,7 @@ export function Ficha() {
           <section className="painel">
             <h3>Recursos</h3>
             <div className="recursos">
-              {sistema.recursos.map(r => (
+              {recursos.map(r => (
                 <BarraRecurso key={r.nome} nome={r.nome} cor={r.cor}
                   valor={f.recursos[r.nome] ?? { atual: 10, max: 10 }}
                   aoMudar={v => alterar(x => { x.recursos[r.nome] = v; })} />
@@ -836,7 +864,12 @@ export function Ficha() {
             alterarLista={fn => alterar(x => fn(x.pactos))} />
         )}
         {aba === 'combate' && <AbaCombate f={f} alterar={alterar} />}
-        {aba === 'habilidades' && (
+        {aba === 'habilidades' && monstro && (
+          <ListaEntradas lista={f.habilidadesNivel} novo="Nova habilidade"
+            vazio="Nenhuma habilidade ainda. Ex.: Mordida venenosa, Regeneração, Imune a fogo."
+            alterarLista={fn => alterar(x => fn(x.habilidadesNivel))} />
+        )}
+        {aba === 'habilidades' && !monstro && (
           <>
             <ListaEntradas comNivel lista={[...f.habilidadesNivel].sort((a, b) => num(a.nivel) - num(b.nivel))}
               novo="Nova habilidade" vazio="Nenhuma habilidade ainda."
@@ -855,7 +888,7 @@ export function Ficha() {
         )}
         {aba === 'anotacoes' && (
           <textarea className="texto-grande" value={f.anotacoes}
-            placeholder="Anotações livres: história, contatos, pistas, objetivos..."
+            placeholder={monstro ? 'Anotações livres: comportamento, onde aparece, fraquezas, táticas...' : 'Anotações livres: história, contatos, pistas, objetivos...'}
             onChange={e => alterar(x => { x.anotacoes = e.target.value; })} />
         )}
         {aba === 'inventario' && <AbaInventario f={f} alterar={alterar} />}

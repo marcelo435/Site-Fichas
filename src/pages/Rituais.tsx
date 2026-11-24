@@ -57,7 +57,7 @@ function Portao({ aoEntrar }: { aoEntrar: () => void }) {
 
 export function Rituais() {
   useTitulo('Rituais');
-  const { rituais, sistema, personagens } = useDados();
+  const { rituais, sistema, personagens, monstros } = useDados();
   const [aba, setAba] = useState<Aba>('altar');
   const [sub, setSub] = useState<SubAba>('criar');
   const [liberado, setLiberado] = useState(mestreLiberado);
@@ -72,7 +72,8 @@ export function Rituais() {
   const [busca, setBusca] = useState('');
   const [elemento, setElemento] = useState('');
   const [circulo, setCirculo] = useState('');
-  const [form, setForm] = useState<{ ritual?: Ritual } | null>(null);
+  /** novo = ritual que ainda não está na biblioteca (ex.: vindo do Altar), mesmo já vindo preenchido */
+  const [form, setForm] = useState<{ ritual?: Ritual; novo?: boolean } | null>(null);
 
   // Símbolos
   const [buscaSimb, setBuscaSimb] = useState('');
@@ -102,7 +103,7 @@ export function Rituais() {
   };
 
   const excluir = (r: Ritual) => {
-    const usos = personagens.filter(f => f.rituais.includes(r.id)).length;
+    const usos = [...personagens, ...monstros].filter(f => f.rituais.includes(r.id)).length;
     const aviso = usos ? `\nEle será removido de ${usos} ficha(s).` : '';
     if (confirm(`Excluir o ritual "${r.nome}"?${aviso}`)) acoes().excluirRitual(r.id);
   };
@@ -121,7 +122,8 @@ export function Rituais() {
   const editando = criador.id ? rituais.find(r => r.id === criador.id) : undefined;
 
   return (
-    <>
+    // no Altar, título e abas entram na mesma folha de papel do círculo
+    <div className={aba === 'altar' ? 'folha-altar' : undefined}>
       <div className="cabecalho">
         <div>
           <h1>Rituais</h1>
@@ -143,7 +145,12 @@ export function Rituais() {
         </button>
       </nav>
 
-      {aba === 'altar' && <AltarLivre selo={altar} mudar={setAltar} aoMestre={() => setAba('grimorio')} />}
+      {aba === 'altar' && (
+        <AltarLivre selo={altar} mudar={setAltar}
+          aoMestre={() => setAba('grimorio')}
+          aoBiblioteca={() => setAba('biblioteca')}
+          aoSalvar={s => setForm({ ritual: ritualDoSelo(s, ''), novo: true })} />
+      )}
 
       {aba === 'grimorio' && !liberado && <Portao aoEntrar={() => setLiberado(true)} />}
 
@@ -287,8 +294,11 @@ export function Rituais() {
         </>
       )}
 
-      {form && <RitualForm ritual={form.ritual} aoFechar={() => setForm(null)} />}
-    </>
+      {form && (
+        <RitualForm ritual={form.ritual} novo={form.novo} aoFechar={() => setForm(null)}
+          aoSalvar={form.novo ? r => toast(<>Ritual <strong>{r.nome}</strong> salvo na biblioteca.</>) : undefined} />
+      )}
+    </div>
   );
 }
 

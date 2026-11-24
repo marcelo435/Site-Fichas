@@ -160,6 +160,11 @@ export interface Dados {
   sistema: Sistema;
   /** Todos os personagens; existem independente de mesa. */
   personagens: Ficha[];
+  /**
+   * Monstros do mestre: usam a mesma ficha, com alguns campos com outro sentido
+   * (conceito = Tipo, altura = Tamanho, nivel = Ameaça, habilidadesNivel = Habilidades).
+   */
+  monstros: Ficha[];
   mesas: Mesa[];
   rituais: Ritual[];
   livro: Capitulo[];

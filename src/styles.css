@@ -229,6 +229,7 @@ input[type=number]::-webkit-inner-spin-button { opacity: .3; }
 .heroi-nivel span { font-size: .7rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--texto-2); }
 .heroi-nivel input { width: 3ch; padding: 0; border: none; background: transparent; font-size: 1.15rem; font-weight: 700; }
 .heroi-nivel input:focus { box-shadow: none; }
+.heroi-nivel.ameaca span { letter-spacing: .08em; }
 .heroi-campos { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .6rem; }
 .campo-flutuante { position: relative; display: block; }
 .campo-flutuante input { padding: 1.25rem .85rem .45rem; border-radius: 10px; background: rgba(0, 0, 0, .4); }
@@ -279,11 +280,10 @@ input[type=number]::-webkit-inner-spin-button { opacity: .3; }
 .recursos { display: grid; gap: 1rem; }
 .recurso-topo { display: flex; justify-content: space-between; align-items: center; gap: .6rem; margin-bottom: .4rem; }
 .recurso-nome { display: flex; align-items: center; gap: .55rem; font-weight: 600; font-size: .92rem; }
-.recurso-bolinha { width: 8px; height: 8px; border-radius: 50%; background: var(--cor); box-shadow: 0 0 10px var(--cor); }
+.recurso-bolinha { width: 8px; height: 8px; border-radius: 50%; background: var(--cor); }
 .recurso-icone {
   flex: none; width: 22px; height: 22px; color: color-mix(in srgb, var(--cor) 70%, #fff);
   fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round;
-  filter: drop-shadow(0 0 5px color-mix(in srgb, var(--cor) 70%, transparent));
 }
 .recurso-icone.mascara {
   background: currentColor; width: 26px; height: 26px; margin: -2px -2px -2px -2px;
@@ -306,18 +306,13 @@ input[type=number]::-webkit-inner-spin-button { opacity: .3; }
 .recurso-num:focus { box-shadow: none; background: rgba(255, 255, 255, .08); }
 .recurso-sep { color: var(--texto-2); }
 .recurso-trilho {
-  position: relative; height: 20px; border-radius: 7px; overflow: hidden;
-  background: rgba(255, 255, 255, .06); border: 1px solid rgba(255, 255, 255, .05);
-}
-.recurso-trilho::after {
-  /* brilho de vidro em cima da barra */
-  content: ''; position: absolute; inset: 0 0 50% 0; border-radius: inherit;
-  background: linear-gradient(rgba(255, 255, 255, .14), transparent); pointer-events: none;
+  /* barra fosca: cor chapada, sem brilho */
+  position: relative; height: 16px; border-radius: 5px; overflow: hidden;
+  background: rgba(255, 255, 255, .08);
 }
 .recurso-fill {
   height: 100%; border-radius: inherit; transition: width .35s cubic-bezier(.2, .8, .2, 1);
-  background: linear-gradient(90deg, color-mix(in srgb, var(--cor) 55%, #000), var(--cor) 75%, color-mix(in srgb, var(--cor) 65%, #fff));
-  box-shadow: 0 0 14px color-mix(in srgb, var(--cor) 65%, transparent);
+  background: color-mix(in srgb, var(--cor) 78%, #000);
 }
 .recurso.baixo .recurso-fill { animation: pulsar 1.6s ease-in-out infinite; }
 .recurso.zerado .recurso-nome { color: #ff8a8d; }
@@ -658,7 +653,13 @@ input[type=number]::-webkit-inner-spin-button { opacity: .3; }
 }
 .modal-caixa.largo { width: min(760px, 100%); }
 .modal-caixa h2 { margin: 0 0 1rem; }
-.modal-acoes { display: flex; justify-content: flex-end; gap: .5rem; margin-top: .5rem; }
+.modal-acoes {
+  display: flex; justify-content: flex-end; gap: .5rem;
+  /* fica grudado no pé da janela: Salvar sempre aparece, mesmo com a tela baixa */
+  position: sticky; bottom: -1.4rem; z-index: 1;
+  margin: .5rem -1.5rem -1.4rem; padding: .8rem 1.5rem 1.2rem;
+  background: rgba(10, 10, 11, .97); border-top: 1px solid var(--borda);
+}
 
 /* ---------- Toasts ---------- */
 #toasts { position: fixed; bottom: 1rem; right: 1rem; z-index: 60; display: flex; flex-direction: column; gap: .5rem; align-items: flex-end; }
@@ -858,20 +859,90 @@ body.arrastando-simbolo, body.arrastando-simbolo * { cursor: grabbing !important
   .circulo-ritual .onda, .leitura-circulo.viva p, .fantasma-simbolo .glifo { animation: none; }
 }
 
-/* ---------- Altar dos jogadores: círculo no meio, símbolos soltos em volta ---------- */
+/* ---------- Altar dos jogadores: papel claro, tinta preta; círculo no meio, símbolos soltos em volta ---------- */
+.folha-altar, .altar-livre { --papel: #f3efe6; --tinta: #141416; --tinta-2: #5c5a58; --tinta-3: #8d8a85; }
 .altar-livre {
   position: relative; overflow: hidden; height: clamp(620px, calc(100vh - 200px), 1000px);
-  border: 1px solid var(--borda); border-radius: 14px; user-select: none; -webkit-user-select: none;
-  background: radial-gradient(ellipse at 50% 46%, rgba(30, 30, 36, .55), rgba(3, 3, 4, .88) 70%);
-  box-shadow: inset 0 0 120px rgba(0, 0, 0, .8);
+  border: 1px solid #d8d2c4; border-radius: 14px; user-select: none; -webkit-user-select: none;
+  color: var(--tinta); color-scheme: light;
+  background:
+    radial-gradient(ellipse at 50% 46%, #fbf9f4 0%, var(--papel) 55%, #e2dccd 100%);
+  box-shadow: inset 0 0 90px rgba(90, 70, 40, .22), 0 10px 40px rgba(0, 0, 0, .5);
 }
-.altar-barra { position: absolute; z-index: 10; top: 0; left: 0; right: 0; display: flex; flex-wrap: wrap; justify-content: space-between; gap: .5rem; padding: .7rem .8rem; }
-.altar-barra .filtro.tracejado { border-style: dashed; }
+/* moldura dupla de grimório */
+.altar-livre::before, .altar-livre::after { content: ''; position: absolute; pointer-events: none; z-index: 0; border-radius: 8px; }
+.altar-livre::before { inset: 8px; border: 1.5px solid rgba(20, 20, 22, .55); }
+.altar-livre::after { inset: 13px; border: 1px solid rgba(20, 20, 22, .25); }
+
+.altar-barra { position: absolute; z-index: 10; top: 0; left: 0; right: 0; display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: .5rem; padding: 1.1rem 1.2rem .5rem; }
+.altar-livre .filtro { background: rgba(255, 255, 255, .55); border-color: rgba(20, 20, 22, .28); color: var(--tinta-2); font-family: var(--serif); }
+.altar-livre .filtro:hover { color: var(--tinta); border-color: var(--tinta); }
+.altar-livre .filtro.ativo { background: var(--tinta); border-color: var(--tinta); color: var(--papel); }
+
+/* a página do Altar inteira vira uma folha: título, abas e círculo no mesmo papel */
+.folha-altar {
+  position: relative; padding: 1.7rem 2rem .6rem; border-radius: 14px; border: 1px solid #d8d2c4;
+  color: var(--tinta); color-scheme: light;
+  background: radial-gradient(ellipse at 50% 60%, #fbf9f4 0%, var(--papel) 55%, #e2dccd 100%);
+  box-shadow: inset 0 0 90px rgba(90, 70, 40, .22), 0 10px 40px rgba(0, 0, 0, .5);
+}
+.folha-altar::before, .folha-altar::after { content: ''; position: absolute; pointer-events: none; border-radius: 8px; }
+.folha-altar::before { inset: 8px; border: 1.5px solid rgba(20, 20, 22, .55); }
+.folha-altar::after { inset: 13px; border: 1px solid rgba(20, 20, 22, .25); }
+.folha-altar h1 { color: var(--tinta); }
+.folha-altar .cabecalho { margin-bottom: .8rem; }
+.folha-altar .cabecalho .sub { color: var(--tinta-2); font-family: var(--serif); font-style: italic; }
+.folha-altar .abas-ficha {
+  position: relative; top: 0; margin: 0 0 .4rem; background: rgba(255, 255, 255, .45);
+  border-color: rgba(20, 20, 22, .3); backdrop-filter: none; -webkit-backdrop-filter: none;
+}
+.folha-altar .abas-ficha button { color: var(--tinta-2); }
+.folha-altar .abas-ficha button:hover { color: var(--tinta); }
+.folha-altar .abas-ficha button.ativo { background: var(--tinta); color: var(--papel); }
+.folha-altar .contador { background: rgba(20, 20, 22, .1); }
+.folha-altar .abas-ficha button.ativo .contador { background: rgba(255, 255, 255, .2); }
+/* dentro da folha o altar não precisa de papel nem moldura próprios */
+.folha-altar .altar-livre { border: 0; border-top: 1px solid rgba(20, 20, 22, .18); border-radius: 0; background: none; box-shadow: none; margin: 0 -.6rem; }
+.folha-altar .altar-livre::before, .folha-altar .altar-livre::after { display: none; }
+@media (max-width: 560px) {
+  .folha-altar { padding: 1.3rem 1.1rem .4rem; }
+  .folha-altar .altar-livre { margin: 0 -.3rem; }
+}
+
+/* menu do canto */
+.altar-menu { position: relative; }
+.altar-menu-btn { font-size: .85rem; padding: .4rem .95rem; }
+.altar-menu-btn span { margin-right: .2rem; }
+.altar-menu-lista {
+  position: absolute; top: calc(100% + 6px); left: 0; min-width: 220px; padding: .35rem;
+  display: flex; flex-direction: column; background: #fbf9f4; border: 1px solid var(--tinta); border-radius: 10px;
+  box-shadow: 0 12px 30px rgba(40, 30, 10, .28), inset 0 0 0 3px #fbf9f4, inset 0 0 0 4px rgba(20, 20, 22, .2);
+  animation: abrir-menu .14s ease-out;
+}
+.altar-menu-lista button {
+  display: flex; align-items: center; gap: .6rem; padding: .5rem .7rem; border: 0; border-radius: 6px; background: none;
+  font: inherit; font-family: var(--serif); font-size: .95rem; color: var(--tinta); text-align: left; cursor: pointer;
+}
+.altar-menu-lista button span { width: 1.1em; text-align: center; color: var(--tinta-2); }
+.altar-menu-lista button:hover:not(:disabled), .altar-menu-lista button:focus-visible { background: var(--tinta); color: var(--papel); outline: none; }
+.altar-menu-lista button:hover:not(:disabled) span, .altar-menu-lista button:focus-visible span { color: var(--papel); }
+.altar-menu-lista button:disabled { opacity: .4; cursor: default; }
+.altar-menu-lista hr { border: 0; border-top: 1px solid rgba(20, 20, 22, .2); margin: .3rem .4rem; }
+@keyframes abrir-menu { from { opacity: 0; transform: translateY(-4px); } }
+
+/* o desenho: tinta preta direto no papel */
 .altar-circulo { position: absolute; z-index: 1; transition: filter .6s; }
 .altar-circulo .circulo-ritual { max-width: none; width: 100%; height: 100%; }
-.altar-circulo.desperto { filter: drop-shadow(0 0 10px rgba(255, 255, 255, .22)); }
+.altar-livre .circulo-arte { filter: none; opacity: .92; }
+.altar-livre .circulo-anel circle { stroke: var(--tinta); }
+.altar-livre .circulo-ritual .num { fill: var(--tinta-3); }
+.altar-livre .circulo-ritual .vaga.no .disco { fill: var(--tinta); }
+.altar-livre .circulo-ritual .vaga.no.vazia .disco { fill: #26262a; }
+.altar-livre .circulo-ritual .vaga.centro .disco { fill: #fbf9f4; stroke: var(--tinta); }
+.altar-livre .circulo-ritual .vaga.alvo .anel { stroke: var(--tinta) !important; filter: drop-shadow(0 0 5px rgba(20, 20, 22, .6)); }
+.altar-circulo.desperto { filter: drop-shadow(0 0 8px rgba(20, 20, 22, .28)); }
 .altar-circulo.pulso { animation: pulso-altar .9s ease-out; }
-@keyframes pulso-altar { 30% { filter: drop-shadow(0 0 22px rgba(255, 255, 255, .7)); } }
+@keyframes pulso-altar { 30% { filter: drop-shadow(0 0 16px rgba(20, 20, 22, .6)); } }
 .circulo-ritual.fundo .vaga { cursor: default; }
 .altar-efeitos { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 5; pointer-events: none; }
 
@@ -880,28 +951,31 @@ body.arrastando-simbolo, body.arrastando-simbolo * { cursor: grabbing !important
   transform: var(--pos); touch-action: none; cursor: grab; outline: none; border-radius: 50%;
   transition: transform .45s cubic-bezier(.2, .8, .2, 1), width .3s, height .3s, margin .3s, opacity .4s;
 }
-.runa .glifo { display: block; width: 100%; height: 100%; color: #eeeef2; filter: drop-shadow(0 0 5px rgba(255, 255, 255, .35)); animation: flutuar 6s ease-in-out infinite; animation-delay: var(--d); }
-.runa:hover .glifo { color: #fff; filter: drop-shadow(0 0 9px rgba(255, 255, 255, .7)); }
-.runa:focus-visible { box-shadow: 0 0 0 2px rgba(255, 255, 255, .6); }
+.runa .glifo { display: block; width: 100%; height: 100%; color: var(--tinta); filter: drop-shadow(0 1px 2px rgba(60, 45, 20, .25)); animation: flutuar 6s ease-in-out infinite; animation-delay: var(--d); }
+.runa:hover .glifo { color: #000; filter: drop-shadow(0 0 6px rgba(20, 20, 22, .45)); }
+.runa:focus-visible { box-shadow: 0 0 0 2px rgba(20, 20, 22, .6); }
 .runa.oculta { opacity: 0; pointer-events: none; }
 .runa.pegando { z-index: 8; cursor: grabbing; transition: none; transform: var(--pos) scale(1.3); }
-.runa.pegando .glifo { color: #fff; animation: tremer-glifo .12s linear infinite; filter: drop-shadow(0 0 8px rgba(255, 255, 255, .9)) drop-shadow(0 0 2px #fff); }
+.runa.pegando .glifo { color: #000; animation: tremer-glifo .12s linear infinite; filter: drop-shadow(0 0 7px rgba(20, 20, 22, .6)); }
 .runa.sentada .glifo { animation: none; }
-.runa.no-no .glifo { color: #0a0a0b; filter: none; }
+.runa.no-no .glifo { color: #fbf9f4; filter: none; }
 .runa.no-no .glifo path, .runa.no-no .glifo circle { stroke-width: 2.6; }
-.runa.no-centro .glifo { color: #fff; filter: drop-shadow(0 0 6px rgba(255, 255, 255, .6)); }
+.runa.no-centro .glifo { color: var(--tinta); filter: none; }
 @keyframes flutuar { 0%, 100% { transform: translateY(0) rotate(0deg); } 50% { transform: translateY(-5px) rotate(2deg); } }
 
+/* nome do símbolo na mão: em cima (faixa livre) ou na coluna do lado, nunca sobre o círculo */
 .altar-dica { position: absolute; z-index: 9; left: 50%; transform: translateX(-50%); width: min(92%, 520px); text-align: center; pointer-events: none; opacity: 0; transition: opacity .25s; }
+.altar-dica.ao-lado { left: auto; right: 24px; transform: none; text-align: right; }
 .altar-dica.on { opacity: 1; }
-.altar-dica b { display: block; font-family: var(--serif); font-weight: 400; font-size: 1.3rem; letter-spacing: .03em; color: #fff; text-shadow: 0 0 12px rgba(255, 255, 255, .45); }
-.altar-dica span { font-family: var(--serif); font-style: italic; color: var(--texto-2); }
+.altar-dica b, .altar-dica span { text-shadow: 0 0 4px var(--papel), 0 0 10px var(--papel), 0 0 16px var(--papel); }
+.altar-dica b { display: block; font-family: var(--serif); font-weight: 400; font-size: 1.3rem; letter-spacing: .03em; color: var(--tinta); }
+.altar-dica span { font-family: var(--serif); font-style: italic; color: var(--tinta-2); }
 
-.altar-leitura { position: absolute; z-index: 9; left: 50%; bottom: 14px; transform: translateX(-50%); width: min(94%, 660px); text-align: center; pointer-events: none; }
-.altar-leitura .rotulo { font-family: var(--serif); font-variant: small-caps; letter-spacing: .14em; color: var(--texto-2); font-size: .95rem; }
-.altar-leitura p { margin: .15rem 0 0; font-family: var(--serif); font-style: italic; font-size: 1.2rem; line-height: 1.35; color: var(--texto-2); }
-.altar-leitura p.viva { color: #fff; text-shadow: 0 0 14px rgba(255, 255, 255, .3), 0 0 4px #000; animation: revelar 1.1s ease-out; }
-.altar-leitura small { display: block; margin-top: .2rem; color: var(--texto); font-size: .88rem; }
+.altar-leitura { position: absolute; z-index: 9; left: 50%; bottom: 22px; transform: translateX(-50%); width: min(90%, 660px); text-align: center; pointer-events: none; }
+.altar-leitura .rotulo { font-family: var(--serif); font-variant: small-caps; letter-spacing: .14em; color: var(--tinta-3); font-size: .95rem; }
+.altar-leitura p { margin: .15rem 0 0; font-family: var(--serif); font-style: italic; font-size: 1.2rem; line-height: 1.35; color: var(--tinta-3); }
+.altar-leitura p.viva { color: var(--tinta); animation: revelar 1.1s ease-out; }
+.altar-leitura small { display: block; margin-top: .2rem; color: var(--tinta-2); font-size: .88rem; }
 
 @media (max-width: 560px) {
   .altar-livre { height: clamp(640px, calc(100vh - 160px), 900px); border-radius: 10px; }

@@ -5,6 +5,7 @@ import { NaoEncontrado } from './components/NaoEncontrado';
 import { FundoArvore } from './components/FundoArvore';
 import { rolarEMostrar } from './lib/rolagem';
 import { Personagens } from './pages/Personagens';
+import { Monstros } from './pages/Monstros';
 import { Mesas } from './pages/Mesas';
 import { Mesa } from './pages/Mesa';
 import { EntrarMesa } from './pages/EntrarMesa';
@@ -26,6 +27,7 @@ function Topo() {
       <Link to="/personagens" className="logo">ABISMIO</Link>
       <nav>
         <NavLink to="/personagens" className={ativo((naFicha && !veioDeMesa) || pathname === '/personagens')}>Personagens</NavLink>
+        <NavLink to="/monstros" className={ativo(/^\/monstros?(\/|$)/.test(pathname))}>Monstros</NavLink>
         <NavLink to="/mesas" className={ativo(veioDeMesa || /^\/(mesas?|entrar)(\/|$)/.test(pathname))}>Mesas</NavLink>
         <NavLink to="/rituais">Rituais</NavLink>
         <NavLink to="/livro">Livro</NavLink>
@@ -57,7 +59,9 @@ export function App() {
         <Routes>
           <Route path="/" element={<Navigate to="/personagens" replace />} />
           <Route path="/personagens" element={<Personagens />} />
-          <Route path="/personagem/:personagemId" element={<Ficha />} />
+          <Route path="/personagem/:personagemId" element={<Ficha key="personagem" />} />
+          <Route path="/monstros" element={<Monstros />} />
+          <Route path="/monstro/:monstroId" element={<Ficha key="monstro" monstro />} />
           <Route path="/mesas" element={<Mesas />} />
           <Route path="/mesa/:mesaId" element={<Mesa />} />
           <Route path="/entrar/:codigo?" element={<EntrarMesa />} />

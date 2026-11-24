@@ -3,7 +3,16 @@ import type { Ritual } from '../types';
 import { acoes, ritualVazio, useDados } from '../store';
 import { Modal } from './Modal';
 
-export function RitualForm({ ritual, aoFechar }: { ritual?: Ritual; aoFechar: () => void }) {
+interface Props {
+  ritual?: Ritual;
+  /** o ritual veio preenchido mas ainda não está na biblioteca (ex.: desenho do Altar) */
+  novo?: boolean;
+  aoFechar: () => void;
+  /** chamado depois de salvar */
+  aoSalvar?: (r: Ritual) => void;
+}
+
+export function RitualForm({ ritual, novo, aoFechar, aoSalvar }: Props) {
   const sistema = useDados(s => s.sistema);
   const [r, setR] = useState<Ritual>(() => (ritual ? { ...ritual } : ritualVazio()));
   const mudar = <K extends keyof Ritual>(k: K, v: Ritual[K]) => setR(x => ({ ...x, [k]: v }));
@@ -21,11 +30,13 @@ export function RitualForm({ ritual, aoFechar }: { ritual?: Ritual; aoFechar: ()
 
   return (
     <Modal
-      titulo={ritual ? 'Editar ritual' : 'Novo ritual'}
+      titulo={ritual && !novo ? 'Editar ritual' : 'Novo ritual'}
       largo
       aoFechar={aoFechar}
       aoSalvar={() => {
-        acoes().salvarRitual({ ...r, nome: r.nome.trim() });
+        const salvo = { ...r, nome: r.nome.trim() };
+        acoes().salvarRitual(salvo);
+        aoSalvar?.(salvo);
         aoFechar();
       }}
     >

@@ -100,6 +100,7 @@ export function normalizarSistema(bruto: any): Sistema {
 export const dadosIniciais = (): Dados => ({
   sistema: structuredClone(SISTEMA_PADRAO),
   personagens: [],
+  monstros: [],
   mesas: [],
   rituais: [],
   livro: [],
@@ -197,9 +198,12 @@ export function migrarDados(d: any): Dados {
     return { id: m.id, nome: m.nome ?? '', descricao: m.descricao ?? '', personagens: ids, criadaEm: m.criadaEm ?? Date.now() };
   });
   for (const f of personagens) normalizarFicha(f, sistema);
+  const monstros: Ficha[] = Array.isArray(d?.monstros) ? [...d.monstros] : [];
+  for (const f of monstros) normalizarFicha(f, sistema);
   return {
     sistema,
     personagens,
+    monstros,
     mesas,
     rituais: Array.isArray(d?.rituais) ? d.rituais : [],
     livro: Array.isArray(d?.livro) ? d.livro : [],
@@ -219,6 +223,12 @@ interface Acoes {
   duplicarPersonagem(id: string): string | undefined;
   excluirPersonagem(id: string): void;
   importarPersonagem(ficha: Ficha, rituais: Ritual[], mesaId?: string): string;
+
+  criarMonstro(): string;
+  atualizarMonstro(id: string, alterar: (f: Ficha) => void): void;
+  duplicarMonstro(id: string): string | undefined;
+  excluirMonstro(id: string): void;
+  importarMonstro(ficha: Ficha, rituais: Ritual[]): string;
 
   salvarRitual(r: Ritual): void;
   excluirRitual(id: string): void;
@@ -316,6 +326,42 @@ export const useDados = create<Estado>()(
         return id;
       },
 
+      // ---------- Monstros (mesma ficha, lista separada) ----------
+      criarMonstro() {
+        const id = uid();
+        set(s => { s.monstros.push(novaFicha(s.sistema, { id, nome: 'Novo monstro', deslocamento: '' })); });
+        return id;
+      },
+      atualizarMonstro(id, alterar) {
+        set(s => {
+          const f = s.monstros.find(x => x.id === id);
+          if (!f) return;
+          alterar(f);
+          f.atualizadaEm = Date.now();
+        });
+      },
+      duplicarMonstro(id) {
+        let novoId: string | undefined;
+        set(s => {
+          const f = s.monstros.find(x => x.id === id);
+          if (!f) return;
+          novoId = uid();
+          s.monstros.push({ ...structuredClone(current(f)), id: novoId, nome: `${f.nome} (cópia)`, criadaEm: Date.now(), atualizadaEm: Date.now() });
+        });
+        return novoId;
+      },
+      excluirMonstro(id) {
+        set(s => { s.monstros = s.monstros.filter(f => f.id !== id); });
+      },
+      importarMonstro(ficha, rituais) {
+        const id = uid();
+        set(s => {
+          for (const r of rituais) if (!s.rituais.some(x => x.id === r.id)) s.rituais.push(r);
+          s.monstros.push(normalizarFicha({ ...ficha, id, atualizadaEm: Date.now() }, s.sistema));
+        });
+        return id;
+      },
+
       // ---------- Rituais ----------
       salvarRitual(r) {
         set(s => {
@@ -327,7 +373,7 @@ export const useDados = create<Estado>()(
       excluirRitual(id) {
         set(s => {
           s.rituais = s.rituais.filter(r => r.id !== id);
-          for (const f of s.personagens) f.rituais = f.rituais.filter(x => x !== id);
+          for (const f of [...s.personagens, ...s.monstros]) f.rituais = f.rituais.filter(x => x !== id);
         });
       },
 
@@ -360,7 +406,7 @@ export const useDados = create<Estado>()(
         const sistema = normalizarSistema(bruto);
         set(s => {
           s.sistema = sistema;
-          for (const f of s.personagens) normalizarFicha(f, sistema);
+          for (const f of [...s.personagens, ...s.monstros]) normalizarFicha(f, sistema);
         });
       },
       substituirTudo(d) {
@@ -368,6 +414,7 @@ export const useDados = create<Estado>()(
         set(s => {
           s.sistema = novo.sistema;
           s.personagens = novo.personagens;
+          s.monstros = novo.monstros;
           s.mesas = novo.mesas;
           s.rituais = novo.rituais;
           s.livro = novo.livro;
@@ -377,7 +424,7 @@ export const useDados = create<Estado>()(
     {
       name: 'abismio',
       version: 3,
-      partialize: ({ sistema, personagens, mesas, rituais, livro }) => ({ sistema, personagens, mesas, rituais, livro }),
+      partialize: ({ sistema, personagens, monstros, mesas, rituais, livro }) => ({ sistema, personagens, monstros, mesas, rituais, livro }),
       migrate: salvo => migrarDados(salvo),
       merge: (salvo, atual) => ({ ...atual, ...migrarDados(salvo ?? {}) }),
     },

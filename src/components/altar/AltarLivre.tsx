@@ -9,7 +9,7 @@ import { Circulo, Glifo } from './Circulo';
  * Não tem lista nem significado: o jogador arrasta um símbolo até o desenho e vê o que o círculo lê.
  */
 
-interface Geo { W: number; H: number; barra: number; base: number; tam: number; esq: number; topo: number; runa: number }
+interface Geo { W: number; H: number; barra: number; base: number; tam: number; esq: number; topo: number; runa: number; dicaAoLado: boolean }
 interface Ponto { x: number; y: number }
 interface Lugar extends Ponto { v: Vaga; r: number }
 interface Arrasto extends Ponto { id: string; de: Vaga | null; ox: number; oy: number; sx: number; sy: number; moveu: boolean; alvo: Lugar | null }
@@ -18,13 +18,21 @@ interface Onda { x: number; y: number; r: number; max: number; vida: number; fin
 interface Poeira { x: number; y: number; vy: number; fase: number; tam: number }
 
 const ALTURA_LEITURA = 100;
+/** espaço do nome do símbolo que está na mão: nunca fica em cima do círculo */
+const ALTURA_DICA = 64;
+const LARGURA_DICA = 220;
 
 function calcularGeo(W: number, H: number, barra: number): Geo {
   const espaco = H - barra - ALTURA_LEITURA - 16;
-  const largo = W > H * 1.15;
-  const tam = Math.max(200, Math.min(largo ? espaco : Math.min(W * 0.86, espaco * 0.62), 600));
+  const cheio = Math.min(espaco, 600);
+  // tela larga o bastante: o círculo ocupa a altura toda e o nome vai para a coluna do lado
+  const dicaAoLado = (W - cheio) / 2 >= LARGURA_DICA + 24;
+  const semDica = espaco - 2 * ALTURA_DICA;
+  const tam = Math.max(200, dicaAoLado ? cheio
+    : W > H * 1.15 ? Math.min(W * 0.86, semDica, 600)
+    : Math.min(W * 0.86, espaco * 0.62, semDica, 600));
   const meio = barra + (H - barra - ALTURA_LEITURA) / 2;
-  return { W, H, barra, base: ALTURA_LEITURA, tam, esq: (W - tam) / 2, topo: meio - tam / 2, runa: W < 560 ? 38 : 50 };
+  return { W, H, barra, base: ALTURA_LEITURA, tam, esq: (W - tam) / 2, topo: meio - tam / 2, runa: W < 560 ? 38 : 50, dicaAoLado };
 }
 
 function lugaresDoCirculo(g: Geo, circ: string): Lugar[] {
@@ -39,14 +47,22 @@ const dentroDoCirculo = (g: Geo, p: Ponto) => {
   return Math.hypot(p.x - c.x, p.y - c.y) < g.tam / 2 + g.runa * 0.4;
 };
 
-/** Um lugar vazio na tela, fora do círculo e longe dos outros símbolos. */
+/** Área reservada para o nome do símbolo na mão (os símbolos soltos não ficam ali). */
+const naDica = (g: Geo, p: Ponto) => {
+  const folga = g.runa * 0.5;
+  if (p.y > g.barra + ALTURA_DICA + folga) return false;
+  if (g.dicaAoLado) return p.x > g.W - Math.min((g.W - g.tam) / 2, 324) - folga;
+  return Math.abs(p.x - g.W / 2) < Math.min(g.W * 0.46, 260) + folga;
+};
+
+/** Um lugar vazio na tela, fora do círculo, fora da área do nome e longe dos outros símbolos. */
 function lugarLivre(g: Geo, evitar: Ponto[]): Ponto {
   const pad = g.runa * 0.6;
   const alto = g.H - g.barra - g.base - 2 * pad;
   for (let t = 0; t < 400; t++) {
     const folga = t < 250 ? g.runa * 1.15 : g.runa * 0.75;
     const p = { x: pad + Math.random() * (g.W - 2 * pad), y: g.barra + pad + Math.random() * alto };
-    if (dentroDoCirculo(g, p)) continue;
+    if (dentroDoCirculo(g, p) || naDica(g, p)) continue;
     if (evitar.some(o => Math.hypot(o.x - p.x, o.y - p.y) < folga)) continue;
     return p;
   }
@@ -63,6 +79,13 @@ function lugarMaisPerto(lugares: Lugar[], x: number, y: number): Lugar | null {
   return melhor;
 }
 
+const mesmoSelo = (a: Selo, b: Selo) =>
+  a.circ === b.circ && a.centro === b.centro && a.nos.length === b.nos.length && a.nos.every((x, i) => x === b.nos[i]);
+
+/** Cores do altar (papel claro, tinta preta). */
+const TINTA = '#141416';
+const TINTA_2 = '#6b6b72';
+
 const vagaDe = (selo: Selo, id: string): Vaga | null => {
   if (selo.centro === id) return 'c';
   const i = selo.nos.indexOf(id);
@@ -72,11 +95,15 @@ const vagaDe = (selo: Selo, id: string): Vaga | null => {
 interface Props {
   selo: Selo;
   mudar: (s: Selo) => void;
-  /** botão "Mestre" da barra (abre o grimório) */
+  /** item "Grimório do mestre" do menu */
   aoMestre?: () => void;
+  /** item "Biblioteca" do menu */
+  aoBiblioteca?: () => void;
+  /** item "Salvar ritual" do menu (recebe o desenho atual) */
+  aoSalvar?: (s: Selo) => void;
 }
 
-export function AltarLivre({ selo, mudar, aoMestre }: Props) {
+export function AltarLivre({ selo, mudar: mudarFora, aoMestre, aoBiblioteca, aoSalvar }: Props) {
   const caixa = useRef<HTMLDivElement>(null);
   const barraRef = useRef<HTMLDivElement>(null);
   const tela = useRef<HTMLCanvasElement>(null);
@@ -87,6 +114,33 @@ export function AltarLivre({ selo, mudar, aoMestre }: Props) {
   const [arrasto, setArrasto] = useState<Arrasto | null>(null);
   const [dica, setDica] = useState<string | null>(null);
   const [lido, setLido] = useState(0);
+  const [menu, setMenu] = useState(false);
+  /** desenhos anteriores, para o "Desfazer" */
+  const [historico, setHistorico] = useState<Selo[]>([]);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  const mudar = (s: Selo) => {
+    if (mesmoSelo(s, selo)) return;
+    setHistorico(h => [...h.slice(-49), selo]);
+    mudarFora(s);
+  };
+  const desfazer = () => {
+    const anterior = historico[historico.length - 1];
+    if (!anterior) return;
+    setHistorico(h => h.slice(0, -1));
+    mudarFora(anterior);
+    setLido(n => n + 1);
+  };
+
+  // fecha o menu ao clicar fora ou apertar Esc
+  useEffect(() => {
+    if (!menu) return;
+    const fora = (e: globalThis.PointerEvent) => { if (!menuRef.current?.contains(e.target as Node)) setMenu(false); };
+    const esc = (e: globalThis.KeyboardEvent) => { if (e.key === 'Escape') setMenu(false); };
+    document.addEventListener('pointerdown', fora);
+    document.addEventListener('keydown', esc);
+    return () => { document.removeEventListener('pointerdown', fora); document.removeEventListener('keydown', esc); };
+  }, [menu]);
 
   const arrastoRef = useRef<Arrasto | null>(null);
   const timerDica = useRef(0);
@@ -121,7 +175,8 @@ export function AltarLivre({ selo, mudar, aoMestre }: Props) {
     for (const s of SIMBOLOS) {
       if (sentados.has(s.id) || arrasto?.id === s.id) continue;
       const p = novo[s.id];
-      if (p && !dentroDoCirculo(g, { x: p.fx * g.W, y: p.fy * g.H })) continue;
+      const onde = p && { x: p.fx * g.W, y: p.fy * g.H };
+      if (onde && !dentroDoCirculo(g, onde) && !naDica(g, onde)) continue;
       const q = lugarLivre(g, evitar);
       evitar.push(q);
       novo[s.id] = { fx: q.x / g.W, fy: q.y / g.H };
@@ -169,22 +224,22 @@ export function AltarLivre({ selo, mudar, aoMestre }: Props) {
       for (const m of fx.poeira) {
         m.y -= m.vy; m.fase += 0.01;
         if (m.y < -5) { m.y = g.H + 5; m.x = Math.random() * g.W; }
-        ctx.globalAlpha = 0.16 + 0.12 * Math.sin(m.fase);
-        ctx.fillStyle = '#fff';
+        ctx.globalAlpha = 0.12 + 0.08 * Math.sin(m.fase);
+        ctx.fillStyle = TINTA;
         ctx.beginPath(); ctx.arc(m.x + Math.sin(m.fase) * 6, m.y, m.tam, 0, 6.283); ctx.fill();
       }
       fx.particulas = fx.particulas.filter(p => p.vida > 0);
       for (const p of fx.particulas) {
         p.x += p.vx; p.y += p.vy; p.vx *= 0.96; p.vy = p.vy * 0.96 - 0.03; p.vida -= p.some;
         ctx.globalAlpha = Math.max(0, p.vida);
-        ctx.fillStyle = p.forte ? '#fff' : '#9a9aa2';
+        ctx.fillStyle = p.forte ? TINTA : TINTA_2;
         ctx.beginPath(); ctx.arc(p.x, p.y, p.tam, 0, 6.283); ctx.fill();
       }
       fx.ondas = fx.ondas.filter(o => o.vida > 0);
       for (const o of fx.ondas) {
         o.r += (o.max - o.r) * 0.12; o.vida -= 0.03;
         ctx.globalAlpha = Math.max(0, o.vida) * 0.9;
-        ctx.strokeStyle = o.fina ? '#9a9aa2' : '#fff';
+        ctx.strokeStyle = o.fina ? TINTA_2 : TINTA;
         ctx.lineWidth = o.fina ? 1 : 2.5;
         ctx.beginPath(); ctx.arc(o.x, o.y, o.r, 0, 6.283); ctx.stroke();
       }
@@ -303,17 +358,37 @@ export function AltarLivre({ selo, mudar, aoMestre }: Props) {
   return (
     <div ref={caixa} className="altar-livre">
       <div ref={barraRef} className="altar-barra">
+        <div ref={menuRef} className="altar-menu">
+          <button className={`filtro altar-menu-btn ${menu ? 'ativo' : ''}`} aria-expanded={menu} aria-haspopup="menu"
+            onClick={() => setMenu(m => !m)}>
+            <span aria-hidden="true">☰</span> Menu
+          </button>
+          {menu && (
+            <div className="altar-menu-lista" role="menu">
+              {aoSalvar && (
+                <button role="menuitem" disabled={!selo.centro} title={selo.centro ? undefined : 'Coloque um símbolo no centro primeiro'}
+                  onClick={() => { setMenu(false); aoSalvar(selo); }}>
+                  <span aria-hidden="true">✦</span> Salvar ritual
+                </button>
+              )}
+              {aoMestre && <button role="menuitem" onClick={() => { setMenu(false); aoMestre(); }}><span aria-hidden="true">☽</span> Grimório do mestre</button>}
+              {aoBiblioteca && <button role="menuitem" onClick={() => { setMenu(false); aoBiblioteca(); }}><span aria-hidden="true">❖</span> Biblioteca</button>}
+              <hr />
+              <button role="menuitem" onClick={() => { setMenu(false); setLivres({}); }}><span aria-hidden="true">✶</span> Espalhar símbolos</button>
+              <button role="menuitem" disabled={!historico.length} onClick={desfazer}><span aria-hidden="true">↶</span> Desfazer</button>
+              <button role="menuitem" disabled={!selo.centro && !selo.nos.some(Boolean)}
+                onClick={() => { setMenu(false); setLivres({}); mudar(seloVazio(selo.circ)); }}>
+                <span aria-hidden="true">○</span> Limpar círculo
+              </button>
+            </div>
+          )}
+        </div>
         <div className="chips-circulo" role="group" aria-label="Círculo">
           {CIRCULOS.map(x => (
             <button key={x.id} className={`filtro ${x.id === selo.circ ? 'ativo' : ''}`} aria-pressed={x.id === selo.circ} onClick={() => trocar(x.id)}>
               {x.nome}
             </button>
           ))}
-        </div>
-        <div className="chips-circulo">
-          <button className="filtro" onClick={() => setLivres({})}>Espalhar</button>
-          <button className="filtro" onClick={() => { setLivres({}); mudar(seloVazio(selo.circ)); }}>Desfazer ritual</button>
-          {aoMestre && <button className="filtro tracejado" onClick={aoMestre}>Mestre</button>}
         </div>
       </div>
 
@@ -345,7 +420,8 @@ export function AltarLivre({ selo, mudar, aoMestre }: Props) {
         );
       })}
 
-      <div className={`altar-dica ${sDica ? 'on' : ''}`} style={{ top: g ? g.barra + 2 : 60 }} aria-live="polite">
+      <div className={`altar-dica ${sDica ? 'on' : ''} ${g?.dicaAoLado ? 'ao-lado' : ''}`} aria-live="polite"
+        style={g?.dicaAoLado ? { top: g.barra + 4, width: Math.min((g.W - g.tam) / 2 - 24, 300) } : { top: g ? g.barra + 4 : 60 }}>
         {sDica && <><b>{sDica.nome}</b><span>{sDica.ess}</span></>}
       </div>
 

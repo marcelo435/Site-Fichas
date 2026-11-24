@@ -2,18 +2,23 @@ import type { ReactNode } from 'react';
 import { Link } from 'react-router';
 import type { Ficha } from '../types';
 import { useDados } from '../store';
-import { iniciais, porcentagem } from '../lib/util';
+import { iniciais, porcentagem, recursoSoDePersonagem } from '../lib/util';
 
-export function CartaoPersonagem({ ficha: f, para, children }: { ficha: Ficha; para?: string; children?: ReactNode }) {
-  const recursos = useDados(s => s.sistema.recursos);
+export function CartaoPersonagem({ ficha: f, para, monstro, children }: {
+  ficha: Ficha; para?: string; monstro?: boolean; children?: ReactNode;
+}) {
+  const todos = useDados(s => s.sistema.recursos);
+  const recursos = monstro ? todos.filter(r => !recursoSoDePersonagem(r.nome)) : todos;
   return (
     <div className="cartao personagem-cartao">
-      <Link className="ficha-cartao" to={para ?? `/personagem/${f.id}`}>
+      <Link className="ficha-cartao" to={para ?? (monstro ? `/monstro/${f.id}` : `/personagem/${f.id}`)}>
         <div className="mini-retrato">{f.retrato ? <img src={f.retrato} alt="" /> : iniciais(f.nome)}</div>
         <div className="ficha-cartao-info">
           <strong>{f.nome}</strong>
           <small>
-            {f.jogador || 'Sem jogador'} · {f.conceito || '—'} · Nv {f.nivel}
+            {monstro
+              ? <>{f.conceito || 'Sem tipo'}{f.altura ? ` · ${f.altura}` : ''} · Ameaça {f.nivel}</>
+              : <>{f.jogador || 'Sem jogador'} · {f.conceito || '—'} · Nv {f.nivel}</>}
           </small>
           {recursos.map(r => {
             const v = f.recursos[r.nome] ?? { atual: 0, max: 0 };

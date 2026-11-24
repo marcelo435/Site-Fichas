@@ -133,9 +133,9 @@ export function Sistema() {
   };
 
   const exportar = () => {
-    const { sistema, personagens, mesas, rituais, livro } = useDados.getState();
+    const { sistema, personagens, monstros, mesas, rituais, livro } = useDados.getState();
     const data = new Date().toISOString().slice(0, 10);
-    baixarJSON(`abismio-backup-${data}.json`, { tipo: 'backup', versao: 3, sistema, personagens, mesas, rituais, livro });
+    baixarJSON(`abismio-backup-${data}.json`, { tipo: 'backup', versao: 3, sistema, personagens, monstros, mesas, rituais, livro });
   };
 
   const importar = async () => {
@@ -158,7 +158,7 @@ export function Sistema() {
   };
 
   const apagarTudo = () => {
-    if (!confirm('Apagar TODOS os personagens, mesas, rituais e capítulos? (o PDF do livro fica)')) return;
+    if (!confirm('Apagar TODOS os personagens, monstros, mesas, rituais e capítulos? (o PDF do livro fica)')) return;
     if (prompt('Digite APAGAR para confirmar.') !== 'APAGAR') return;
     acoes().substituirTudo(dadosIniciais());
     carregarNoForm(useDados.getState().sistema);
