@@ -47,7 +47,10 @@ export function Mesas() {
     <>
       <div className="cabecalho">
         <h1>Mesas</h1>
-        <button className="btn primario" onClick={() => setForm({})}>+ Nova mesa</button>
+        <div className="acoes">
+          <Link to="/entrar" className="btn">Entrar com código</Link>
+          <button className="btn primario" onClick={() => setForm({})}>+ Nova mesa</button>
+        </div>
       </div>
 
       {mesas.length === 0 ? (

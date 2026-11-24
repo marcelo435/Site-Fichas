@@ -7,6 +7,7 @@ import { rolarEMostrar } from './lib/rolagem';
 import { Personagens } from './pages/Personagens';
 import { Mesas } from './pages/Mesas';
 import { Mesa } from './pages/Mesa';
+import { EntrarMesa } from './pages/EntrarMesa';
 import { Ficha } from './pages/Ficha';
 import { Rituais } from './pages/Rituais';
 import { LivroCapitulos, LivroPdf } from './pages/Livro';
@@ -25,7 +26,7 @@ function Topo() {
       <Link to="/personagens" className="logo">ABISMIO</Link>
       <nav>
         <NavLink to="/personagens" className={ativo((naFicha && !veioDeMesa) || pathname === '/personagens')}>Personagens</NavLink>
-        <NavLink to="/mesas" className={ativo(veioDeMesa || /^\/mesas?(\/|$)/.test(pathname))}>Mesas</NavLink>
+        <NavLink to="/mesas" className={ativo(veioDeMesa || /^\/(mesas?|entrar)(\/|$)/.test(pathname))}>Mesas</NavLink>
         <NavLink to="/rituais">Rituais</NavLink>
         <NavLink to="/livro">Livro</NavLink>
         <NavLink to="/sistema">Sistema</NavLink>
@@ -59,6 +60,7 @@ export function App() {
           <Route path="/personagem/:personagemId" element={<Ficha />} />
           <Route path="/mesas" element={<Mesas />} />
           <Route path="/mesa/:mesaId" element={<Mesa />} />
+          <Route path="/entrar/:codigo?" element={<EntrarMesa />} />
           <Route path="/rituais" element={<Rituais />} />
           <Route path="/livro" element={<LivroPdf />} />
           <Route path="/livro/capitulos/:capId?" element={<LivroCapitulos />} />

@@ -5,7 +5,8 @@ Fichas de personagem para o RPG **Abismo**: atributos com os símbolos dos eleme
 Feito com **Vite + React + TypeScript**, usando React Router, Zustand, react-markdown e Three.js (fundo 3D).
 
 - **Personagens**: cada personagem existe sozinho; não precisa de mesa.
-- **Mesas**: juntam personagens que já existem (um personagem pode estar em várias mesas).
+- **Mesas**: juntam personagens que já existem (um personagem pode estar em várias mesas). Em cada mesa, **Convidar jogadores** gera um código e um link; o jogador abre (ou usa **Entrar com código**) e escolhe o personagem dele. *Por enquanto é demonstração: só encontra mesas salvas no mesmo navegador.*
+- **Rituais**: o círculo do Abismo. No **Altar** os jogadores arrastam os símbolos para o círculo e veem a leitura. O **Grimório do mestre** (senha `abismo`, em [src/pages/Rituais.tsx](src/pages/Rituais.tsx)) mostra o significado dos 40 símbolos, exemplos e o criador: o ritual montado vai para a **Biblioteca** com o desenho e pode ser adicionado nas fichas. Os dados dos símbolos ficam em [src/lib/altarDados.ts](src/lib/altarDados.ts).
 - **Livro**: mostra o PDF do livro. Arraste o PDF na página (fica salvo no navegador) ou coloque em `public/livro.pdf` para ele ir junto com o site.
 - **Ficha**: identidade, barras (Vida, Sanidade, Esforço, Sede, Fome), os atributos em volta do redemoinho do Abismo (cada um com o símbolo do seu elemento), perícias por atributo, proficiências e abas Pacto, Combate, Habilidades de nível, Rituais, Inventário e Anotações. Atributos, perícias, barras e símbolos se configuram em **Sistema**.
 - **Perícias**: clique na rolagem para rolar. A ficha mostra a conta de cada uma:

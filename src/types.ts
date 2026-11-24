@@ -126,6 +126,13 @@ export interface Mesa {
   criadaEm: number;
 }
 
+/** Desenho de um ritual no círculo do Abismo: o círculo, o símbolo do centro e os dos nós. */
+export interface Selo {
+  circ: string;
+  centro: string | null;
+  nos: (string | null)[];
+}
+
 export interface Ritual {
   id: string;
   nome: string;
@@ -139,6 +146,8 @@ export interface Ritual {
   resistencia: string;
   descricao: string;
   criadoEm: number;
+  /** desenho feito no Grimório do mestre (rituais montados no círculo) */
+  selo?: Selo;
 }
 
 export interface Capitulo {

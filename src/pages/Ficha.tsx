@@ -19,6 +19,7 @@ import deslocamentoFundo from '../assets/status/deslocamento-fundo.png';
 import deslocamentoLinhas from '../assets/status/deslocamento-linhas.png';
 import abismoFundo from '../assets/status/abismo-fundo.png';
 import abismoLinhas from '../assets/status/abismo-linhas.png';
+import esforcoIcone from '../assets/status/esforco.png';
 
 type Aba = 'pacto' | 'combate' | 'habilidades' | 'rituais' | 'inventario' | 'anotacoes';
 type Alterar = (fn: (f: TFicha) => void) => void;
@@ -38,6 +39,44 @@ function IconeDado() {
 /* Recursos                                                            */
 /* ------------------------------------------------------------------ */
 
+/** Desenhos (traço) dos ícones dos recursos, em viewBox 24×24. */
+const DESENHOS_RECURSO: Record<string, ReactNode> = {
+  coracao: <path d="M12 20.3s-7.4-4.5-9.1-9.2C1.7 7.6 4 4.5 7.3 4.5c2 0 3.5 1 4.7 2.8 1.2-1.8 2.7-2.8 4.7-2.8 3.3 0 5.6 3.1 4.4 6.6-1.7 4.7-9.1 9.2-9.1 9.2z" />,
+  cerebro: (
+    <>
+      <path d="M12 5.2c-1-1.5-3.5-1.8-4.8-.4-1.6-.2-3 1.3-2.7 3-1.5.8-1.9 2.9-.8 4.1-.8 1.4 0 3.4 1.6 3.8.3 1.7 2.3 2.7 3.9 2 1 1.1 2.3 1 2.8.2z" />
+      <path d="M12 5.2c1-1.5 3.5-1.8 4.8-.4 1.6-.2 3 1.3 2.7 3 1.5.8 1.9 2.9.8 4.1.8 1.4 0 3.4-1.6 3.8-.3 1.7-2.3 2.7-3.9 2-1 1.1-2.3 1-2.8.2" />
+      <path d="M8.3 9.2c1 .2 1.8.9 2 1.8M7.4 13.6c1-.6 2.3-.4 3 .4M15.7 9.2c-1 .2-1.8.9-2 1.8M16.6 13.6c-1-.6-2.3-.4-3 .4" />
+    </>
+  ),
+  gota: (
+    <>
+      <path d="M12 3.3c3.3 4.3 6.1 7.8 6.1 11.1a6.1 6.1 0 0 1-12.2 0c0-3.3 2.8-6.8 6.1-11.1z" />
+      <path d="M9.3 14.6a2.8 2.8 0 0 0 2.2 2.6" />
+    </>
+  ),
+  pernil: (
+    <>
+      <circle cx="14.6" cy="9.4" r="6" />
+      <path d="M12.3 7.1c.8-1 2-1.6 3.3-1.6M10.4 13.6l-3.9 3.9" />
+      <circle cx="5.3" cy="16.6" r="1.5" />
+      <circle cx="7.4" cy="18.7" r="1.5" />
+    </>
+  ),
+};
+
+/** Ícone de cada recurso pelo nome (Vida, Sanidade, Sede, Fome, Esforço). Outros nomes: uma bolinha. */
+function IconeRecurso({ nome }: { nome: string }) {
+  const n = semAcento(nome);
+  if (/esforco|pe/.test(n)) {
+    return <span className="recurso-icone mascara" style={{ maskImage: `url(${esforcoIcone})`, WebkitMaskImage: `url(${esforcoIcone})` }} />;
+  }
+  const tipo = /vida|saude|pv/.test(n) ? 'coracao' : /sanidade|mente/.test(n) ? 'cerebro'
+    : /sede|agua/.test(n) ? 'gota' : /fome|comida/.test(n) ? 'pernil' : '';
+  if (!tipo) return <i className="recurso-bolinha" />;
+  return <svg className="recurso-icone" viewBox="0 0 24 24" aria-hidden="true">{DESENHOS_RECURSO[tipo]}</svg>;
+}
+
 function BarraRecurso({ nome, cor, valor, aoMudar }: {
   nome: string;
   cor: string;
@@ -48,7 +87,7 @@ function BarraRecurso({ nome, cor, valor, aoMudar }: {
   return (
     <div className={`recurso ${valor.atual <= 0 ? 'zerado' : ''} ${pct <= 25 ? 'baixo' : ''}`} style={{ '--cor': cor } as CSSProperties}>
       <div className="recurso-topo">
-        <span className="recurso-nome"><i />{nome}</span>
+        <span className="recurso-nome"><IconeRecurso nome={nome} />{nome}</span>
         <span className="recurso-ctrl">
           <button className="mini-redondo" title="−1 (Shift: −5)" aria-label={`Diminuir ${nome}`}
             onClick={e => aoMudar({ ...valor, atual: valor.atual - passo(e) })}>−</button>
